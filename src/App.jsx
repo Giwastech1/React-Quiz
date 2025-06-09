@@ -5,11 +5,13 @@ import Loader from "./Loader";
 import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Questions";
-
+import NextButton from "./NextButton";
 const initialState = {
   questions: [],
   status: "loading",
-  index:1,
+  index: 0,
+  answer: null,
+  points:0
 };
 function reducer(state, action) {
   switch (action.type) {
@@ -19,13 +21,21 @@ function reducer(state, action) {
       return { ...state, status: "failed" };
     case "start":
       return { ...state, status: "active" };
+    case "newAnswer":
+      const currentQuestion = state.questions[state.index];
+      return {
+        ...state, answer: action.payload,
+        points: action.payload === currentQuestion.correctOption ? state.points + currentQuestion.points : state.points
+      };
+    case "nextQuestion":
+      return { ...state, index: state.index + 1, answer: null };
     default:
       throw new Element("Error");
   }
 }
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { questions, status, index } = state;
+  const { questions, status, index, answer } = state;
   const numOfQuestion = questions.length;
   useEffect(function () {
     fetch("http://localhost:8000/questions")
@@ -40,7 +50,8 @@ function App() {
         {status === "loading" && <Loader />}
         {status === "failed" && <Error />}
         {status === "ready" && <StartScreen numOfQuestion={numOfQuestion}dispatch={dispatch} />}
-        {status === "active" && <Question question={questions[index]} />}
+        {status === "active" && <Question question={questions[index]} dispatch={dispatch} answer={answer} />}
+        <NextButton dispatch={dispatch} answer={answer} />
       </Main>
     </div>
   )
