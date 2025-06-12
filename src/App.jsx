@@ -6,12 +6,16 @@ import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Questions";
 import NextButton from "./NextButton";
+import Progress from "./Progress";
+import FinishScreen from "./FinishScreen";
+
 const initialState = {
   questions: [],
   status: "loading",
   index: 0,
   answer: null,
-  points:0
+  points: 0,
+  highscore:0,
 };
 function reducer(state, action) {
   switch (action.type) {
@@ -29,14 +33,22 @@ function reducer(state, action) {
       };
     case "nextQuestion":
       return { ...state, index: state.index + 1, answer: null };
+    case "finish":
+      return {
+        ...state, status:"finish",
+        highscore: state.points > state.highscore ? state.points : state.highscore
+      };
+    case "restart":
+      return { ...initialState, questions: state.questions, status: "ready", highscore: state.highscore };
     default:
       throw new Element("Error");
   }
 }
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { questions, status, index, answer } = state;
+  const { questions, status, index, answer, points, highscore } = state;
   const numOfQuestion = questions.length;
+  const totalPoint = questions.map((question) => question.points).reduce((acc, curr) => acc + curr, 0);
   useEffect(function () {
     fetch("http://localhost:8000/questions")
       .then((res) => res.json())
@@ -49,11 +61,17 @@ function App() {
       <Main>
         {status === "loading" && <Loader />}
         {status === "failed" && <Error />}
-        {status === "ready" && <StartScreen numOfQuestion={numOfQuestion}dispatch={dispatch} />}
-        {status === "active" && <Question question={questions[index]} dispatch={dispatch} answer={answer} />}
-        <NextButton dispatch={dispatch} answer={answer} />
+        {status === "ready" && <StartScreen numOfQuestion={numOfQuestion} dispatch={dispatch} />}
+        {status === "active" && (
+          <>
+            <Progress index={index} totalQuestion={numOfQuestion} points={state.points} totalPoint={totalPoint} answer={answer} />
+            <Question question={questions[index]} dispatch={dispatch} answer={answer} />
+            <NextButton dispatch={dispatch} answer={answer} index={index} numOfQuestion={numOfQuestion} />
+          </>
+        )}
+        {status === "finish" && <FinishScreen points={points} totalPoint={totalPoint} highscore={highscore} dispatch={dispatch} />}
       </Main>
     </div>
-  )
+  );
 }
 export default App;
