@@ -58,7 +58,7 @@ function App() {
   const numOfQuestion = questions.length;
   const totalPoint = questions.map((question) => question.points).reduce((acc, curr) => acc + curr, 0);
   useEffect(function () {
-    fetch("https://localhost:8000/questions")
+    fetch("https://react-quiz-server-ly1b.onrender.com")
       .then((res) => res.json())
       .then((data) => dispatch({ type: "dataReceived", payload: data }))
       .catch((err) => dispatch({ type: "dataFailed" }));
